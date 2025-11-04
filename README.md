@@ -1,7 +1,7 @@
 
 ## Table of Contents
  - [Project Overview](#project-overview)
- - [Results and Findings](#results-and-findings)
+ - [Findings](#results-and-findings)
  - [Recommendations](#recommendations)
  - [References](#references)
 
@@ -38,7 +38,7 @@ The database consists of three main tables: dim_customers, which stores customer
  - What are the peak sales period?
 
 
-### Results and Findings
+### Findings
  - The inventory reveals that 40% of products are overstocked, 28% maintain normal stock levels, 30% are at risk of stockout, and a mere 2% are out of stock, emphasizing the need for strategic adjustments to optimize stock distribution and prevent potential sales losses.
    
 <img width="676" height="394" alt="image" src="https://github.com/user-attachments/assets/57b81efe-1fd2-4d9e-906d-93706e07a0f5" />
