@@ -2,13 +2,13 @@
 
 ## Table of Contents
  - [Project Overview](#project-overview)
- - [Data Analysis](#data-analysis)
  - [Results and Findings](#results-and-findings)
  - [Recommendations](#recommendations)
  - [References](#references)
 
-### Project Overview
-Many online stores struggle to optimize operations due to a lack of actionable insights into inventory, sales, and customer behavior. This project tackles these challenges by leveraging SQL to answer critical business questions, from inventory management to customer segmentation. Through carefully crafted queries, I analyzed key areas like stock levels (e.g., identifying zero-stock or overstocked products), product performance (e.g., top-selling categories), customer loyalty (e.g., inactive customers), sales trends (e.g., month-over-month growth), customer acquisition (e.g., new customers per month), and detailed segmentation (e.g., by gender, age, or spending). This data-driven approach empowers businesses to prevent stockouts, target high-value customers, and craft precise marketing strategies, driving operational efficiency and revenue growth.
+## Project Overview
+
+Many stores lose revenue due to poor inventory visibility and missed sales opportunities. As a Data Analyst at Needpam, I developed this project to deliver actionable insights that answer key business questions. I uncovered inventory health, pinpointing zero-stock and overstocked items, product performance, identifying top-selling categories and underperformers, and sales trends, tracking month-over-month growth and seasonal patterns. These findings enable proactive stock management, prevent stockouts, reduce excess inventory, and drive sustainable revenue growth.
 
 
 
@@ -16,30 +16,16 @@ Many online stores struggle to optimize operations due to a lack of actionable i
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-### Data Sources 
+## Data Sources 
 The database consists of three main tables: dim_customers, which stores customer details, fact_sales which tracks sales data and dim_products, which holds product information. These dimensions tables (customers and products) are joined to the fact sales table using customer_id and product_id.
 
-### Tools used for this project
+## Tools used for this project
 
 - Power Query in Excel : Data Cleaning .
 - MySQL : Data Analysis.
 - Excel : Visualization with simple stacked column chart, bar, line, doughnut and pie charts.
 
-### Data Cleaning/Preparation
+## Data Cleaning/Preparation
   In the initial data preparation phase, we performed the following task:
    1. Data loading and inspection to correct data errors.
    2. Handling missing values.
@@ -47,300 +33,10 @@ The database consists of three main tables: dim_customers, which stores customer
    4. Removing duplicates.
    5. Validating data integrity.
 
-### Exploratory Data Analysis (EDA)
+## Exploratory Data Analysis (EDA)
  - Which products are out of stock or overstocked?
  - Which product categories are top seller?
- - Which customers are loyal?
  - What are the peak sales period?
-
-### Data Analysis
-
-  - DATABASE STRUCTURE
-
-```sql
-
-CREATE DATABASE bens;
-
-CREATE TABLE dim_customers (
-    customer_id INT PRIMARY KEY,
-    first_name VARCHAR(50),
-    last_name VARCHAR(50),
-    gender VARCHAR(20),
-    marital_status VARCHAR(25),
-    email VARCHAR(100),
-    country VARCHAR(50),
-    join_date DATE,
-    birth_date DATE
-);
-
-CREATE TABLE dim_products (
-    product_id INT PRIMARY KEY,
-    product_name VARCHAR(50),
-    category VARCHAR(50),
-    price DECIMAL(10,2),
-    cost DECIMAL(10,2),
-    stock INT
-);
-
-CREATE TABLE fact_sales (
-    sale_id INT PRIMARY KEY,
-    customer_id INT,
-    product_id INT,
-    order_date DATE,
-    quantity INT,
-    FOREIGN KEY (customer_id) REFERENCES customers(customer_id),
-    FOREIGN KEY (product_id) REFERENCES product(product_id)
-);
-```
-
- - QUERY OPTIMIZATION THROUGH INDEXES
-   
- ```sql                        
--- Customer_id is already indexed as PRIMARY KEY
-CREATE INDEX idx_customers_country ON bens.dim_customers (country);
-CREATE INDEX idx_customers_join_date ON bens.dim_customers (join_date);
-CREATE INDEX idx_customers_birth_date ON bens.dim_customers (birth_date);
-CREATE INDEX idx_customers_gender ON bens.dim_customers (gender);
-CREATE INDEX idx_customers_marital_status ON bens.dim_customers (marital_status);
-
--- Product_id is already indexed as PRIMARY KEY
-CREATE INDEX idx_product_category ON bens.dim_products (category);
-CREATE INDEX idx_product_stock ON bens.dim_products (stock);
-
--- Sale_id is already indexed as PRIMARY KEY
-CREATE INDEX idx_fact_sales_customer_id ON bens.fact_sales (customer_id);
-CREATE INDEX idx_fact_sales_product_id ON bens.fact_sales (product_id);
-CREATE INDEX idx_fact_sales_order_date ON bens.fact_sales (order_date);
-CREATE INDEX idx_fact_sales_customer_date ON bens.fact_sales (customer_id, order_date);
-```
-  - ANALYSIS
-
-```sql
--- A. STOCK INVENTORY MANAGEMENT: Focuses on managing and analyzing inventory levels to optimize stock and prevent shortages or overstocking.
-
--- 1. Which products have zero stock / are at risk of stockout /normal stock / are overstocked ?
--- Helps identify products needing restocking to prevent stockouts and optimize inventory levels, while reducing excess inventory to lower holding costs and free up storage space.
-
-SELECT 
-    product_id,
-    product_name,
-    category,
-    stock,
-    CASE
-        WHEN stock = 0 THEN 'Out_Of_Stock'
-        WHEN stock BETWEEN 0 AND 200 THEN 'At Risk'
-        WHEN stock BETWEEN 200 AND 500 THEN 'Normal'
-        WHEN stock > 500 THEN 'Overstocked'
-        ELSE 'Ouffff'
-    END AS Stock_Inventory_Segmentation
-FROM
-    bens.dim_products
-; 
-
--- 3. Predict stock depletion based on average daily sales?
--- Allows planning for restocking to prevent shortages and ensure continuous product availability.
-
-WITH Avg_Daily_Sales AS (
-    SELECT 
-        p.product_id,	
-        p.product_name,
-        p.stock,
-        SUM(fs.quantity) / DATEDIFF(MAX(fs.order_date), MIN(fs.order_date)) AS Avg_Daily_Qty
-    FROM 
-        bens.fact_sales fs
-        LEFT JOIN bens.dim_products p ON fs.product_id = p.product_id
-    GROUP BY 
-        p.product_id,
-        p.product_name,
-        p.stock
-    HAVING 
-        Avg_Daily_Qty > 0
-)	
-SELECT 
-    product_id,
-    product_name,
-    stock,
-    ROUND(stock / Avg_Daily_Qty, 0) AS Days_Until_Depletion
-FROM 
-    Avg_Daily_Sales
-WHERE 
-    stock > 0
-ORDER BY 
-    Days_Until_Depletion DESC;
-    
-
- -- B. PRODUCT PERFORMANCE: Analyzes product sales, profitability, and market trends to guide product strategy.
-
--- 4. Which products are the top 5 sellers by quantity?
--- Highlights popular products to ensure adequate stock and promote high-demand items.
- 
-SELECT 
-    p.product_id,
-    p.product_name,
-    SUM(fs.quantity) AS Total_Quantity
-FROM
-    bens.fact_sales fs
-        LEFT JOIN
-    bens.dim_products p ON fs.product_id = p.product_id
-GROUP BY p.product_id , p.product_name
-ORDER BY Total_Quantity DESC
-LIMIT 5;
-
--- 6. Which products contribute to 80% of total sales (Pareto analysis)?
--- Focuses efforts on the most impactful products to optimize sales and efficiency.
-
-WITH Product_Sales AS (
-    SELECT 
-        p.product_id,
-        p.product_name,
-        SUM(p.price * fs.quantity) AS Sales_Amount,
-        SUM(SUM(p.price * fs.quantity)) OVER () AS Total_Sales,
-        SUM(SUM(p.price * fs.quantity)) OVER (ORDER BY SUM(p.price * fs.quantity) DESC) / 
-            SUM(SUM(p.price * fs.quantity)) OVER () AS Cum_Share
-    FROM 
-        bens.fact_sales fs
-        LEFT JOIN bens.dim_products p ON fs.product_id = p.product_id
-    GROUP BY 
-        p.product_id,
-        p.product_name
-)
-SELECT 
-    product_id,
-    product_name,
-    Sales_Amount
-FROM 
-    Product_Sales
-WHERE 
-    Cum_Share <= 0.8
-ORDER BY 
-    Sales_Amount DESC;
-
-
-      -- C. LOYAL CUSTOMER ANALYSIS : Focuses on identifying and analyzing loyal or high-value customers.
-
--- 9. Which customers have not made any purchases/ inactive customers?
---  Targets inactive customers with re-engagement campaigns to boost sales.
-
-SELECT 
-    *
-FROM
-    bens.dim_customers
-WHERE
-    customer_id NOT IN (SELECT 
-            customer_id
-        FROM
-            bens.fact_sales);
-
--- 11. What is the average time between purchases for each customer? (purchases frequency)
--- Measures customer loyalty and informs re-engagement timing to maintain sales momentum.
-
-WITH PurchaseIntervals AS (
-    SELECT 
-        customer_id,
-        order_date,
-        DATEDIFF(order_date, LAG(order_date) OVER (PARTITION BY customer_id ORDER BY order_date)) AS Days_Between
-    FROM 
-        bens.fact_sales
-    WHERE 
-        order_date IS NOT NULL
-)
-SELECT 
-    c.customer_id,
-    CONCAT(c.last_name, ' ', c.first_name) AS FullName,
-    ROUND(AVG(pi.Days_Between), 2) AS Avg_Days_Between_Purchases
-FROM 
-    bens.dim_customers c
-    LEFT JOIN PurchaseIntervals pi ON c.customer_id = pi.customer_id
-GROUP BY 
-    c.customer_id,
-    c.first_name,
-    c.last_name
-HAVING 
-    COUNT(pi.Days_Between) > 0
-ORDER BY 
-    Avg_Days_Between_Purchases ASC;
-
-
-   -- D. REVENUE ANALYSIS : Examines overall sales performance, trends, and growth.
-
--- 13. What is the total sales amount by country?
--- Reveals geographic sales performance to tailor marketing and expansion strategies.
-
-SELECT 
-    c.country, SUM(fs.quantity * p.price) AS Total_Sales
-FROM
-    bens.dim_customers c
-        JOIN
-    bens.fact_sales fs ON fs.customer_id = c.customer_id
-        JOIN
-    bens.dim_products p ON fs.product_id = p.product_id
-GROUP BY c.country
-ORDER BY 2 DESC;
-
--- 14. What is the total sales by month and the month-over-month sales growth rate?
---  Monitors sales growth to identify trends and inform strategic business adjustments.
-
-WITH MonthlySales AS (
-    SELECT 
-        DATE_FORMAT(fs.order_date, '%Y-%m') AS Sales_Month,
-        ROUND(SUM(fs.quantity * p.price), 2) AS Monthly_Sales
-    FROM 
-        bens.fact_sales fs
-        JOIN bens.dim_products p ON fs.product_id = p.product_id
-    WHERE 
-        fs.order_date IS NOT NULL
-    GROUP BY 
-        DATE_FORMAT(fs.order_date, '%Y-%m')
-)
-SELECT 
-    Sales_Month,
-    Monthly_Sales,
-    ROUND(((Monthly_Sales - LAG(Monthly_Sales) OVER (ORDER BY Sales_Month)) / 
-           LAG(Monthly_Sales) OVER (ORDER BY Sales_Month) * 100), 2) AS Growth_Rate_Percent
-FROM 
-    MonthlySales
-ORDER BY 
-    Sales_Month;
-
-
-  -- E. CUSTOMER ACQUISITION, SEGMENTATION AND RENTENTION RATE : Focuses on attracting new customers and retaining existing ones.
-    
--- 15. Which countries have the highest customer acquisition rate?
---  Identifies high-growth markets for targeted marketing and expansion efforts.
-
-SELECT 
-    c.country,
-    COUNT(*) AS New_Customers,
-    ROUND(COUNT(*) * 100.0 / (SELECT COUNT(*) FROM bens.dim_customers), 2) AS Acquisition_Rate_Percent
-FROM 
-    bens.dim_customers c
-GROUP BY 
-    c.country
-ORDER BY 
-    New_Customers DESC;
-
--- 16. How are customers segmented by total spending?
---  Enables tailored marketing strategies for different spending segments to maximize revenue.
-
-SELECT 
-    c.customer_id,
-    CASE 
-        WHEN SUM(fs.quantity * p.price) > 10000 THEN 'High Spenders'
-        WHEN SUM(fs.quantity * p.price) BETWEEN 5000 AND 10000 THEN 'Medium Spenders'
-        ELSE 'Low Spenders'
-    END AS Spending_Segment,
-    ROUND(SUM(fs.quantity * p.price), 2) AS Total_Spent
-FROM 
-    bens.dim_customers c
-    JOIN bens.fact_sales fs ON c.customer_id = fs.customer_id
-    JOIN bens.dim_products p ON fs.product_id = p.product_id
-GROUP BY 
-    c.customer_id
-ORDER BY 
-    c.customer_id,
-    Total_Spent DESC;
-
-```
 
 
 ### Results and Findings
@@ -348,33 +44,16 @@ ORDER BY
    
 <img width="676" height="394" alt="image" src="https://github.com/user-attachments/assets/57b81efe-1fd2-4d9e-906d-93706e07a0f5" />
 
-
-
-
-
-
-
-
    
  - Based on the average daily sales, electronics and books are projected to be out of stock within 100 days, necessitating urgent restocking efforts for these high-demand categories. In contrast, other product categories are expected to last up to five months, allowing for more flexible inventory planning and management.
    
 <img width="620" height="435" alt="image" src="https://github.com/user-attachments/assets/c59ba40e-a511-4667-9ae0-aa2fa9b374bc" />
 
 
-
-
-
-
-
-   
  - 80% of the store's revenue is driven by just 26 products, accounting for 52% of the total product lineup (50 products),
  with 6 standout performers (Move Plus, Bring Pro, Her Lite, Thank Lite, Voice Pro, and Compare Plus) each generating over $1 million.
 
 <img width="658" height="592" alt="image" src="https://github.com/user-attachments/assets/6ee2a49f-74cb-4c81-bdff-d6e3970d0165" />
-
-
-
-
 
 
 
@@ -384,48 +63,25 @@ ORDER BY
  highlighting these segments as key drivers of high profitability and potential areas for targeted expansion.
  - An impressive 86% of customers in the database have made at least one purchase, reflecting an outstanding conversion rate that showcases the store's ability to effectively turn visitors into loyal buyers, but 80% of them are inactive that means they do not make any purchases for more than 90 days.
 
-   <img width="581" height="392" alt="image" src="https://github.com/user-attachments/assets/924e7cf7-d4e5-4c9c-8b11-24be21362f39" />
-
-   
-
- - The total customer acquisition rate across countries remains stable at approximately 20%, indicating a consistent and reliable growth in new customers that supports the store's ongoing expansion and market penetration efforts.
- - An overwhelming 98% of customers spend between $0 and $10,000 in the store, highlighting a broad base of low-to-mid-range spenders that underscores the need for targeted strategies to encourage higher spending among this dominant segment.
- - The primary customer base consists of adults aged 30 and older, indicating a focus on a mature demographic.
-
-<img width="548" height="387" alt="image" src="https://github.com/user-attachments/assets/92d3f402-4ab7-472d-ab7c-fe280d1cd6dc" />
+<img width="581" height="392" alt="image" src="https://github.com/user-attachments/assets/924e7cf7-d4e5-4c9c-8b11-24be21362f39" />
 
 
-
-
-   
  - The analysis reveals monthly sales fluctuating between $970K and $1.4M, with notable peaks in April 2024 ($1.31M, 26.5% growth vs. previous month) and January 2025. The lowest sales occurred in February 2024 ($973K, -17.7% growth) and February 2025 ($977K, -15% growth), indicating a consistent decline in sales during February, possibly due to a recurring seasonal trend or specific influencing factor that need, further analysis to understand. The trend shows seasonal patterns, with peaks in spring and early winter, and declines mid-year and late winter.
-
 
 
 <img width="1446" height="571" alt="image" src="https://github.com/user-attachments/assets/31860345-df9e-4a07-9bbf-9bf433ecb0db" />
 
 
-
-
-
-
-
-
-
-
-
-
-### Recommendations
+## Recommendations
  - Prioritize restocking electronics and books within the next 90 days to avoid stockouts, while optimizing overstocked inventory (40%) by redistributing excess stock to high-demand categories or offering promotions to clear surplus.
  - Focus marketing and inventory investment on the top-performing categories (Home Appliances, Sports, Electronics) and the 6 standout products (Move Plus, Bring Pro, Her Lite, Thank Lite, Voice Pro, Compare Plus), which drive 80% of revenue, to maximize profitability and sales.
  - Develop targeted reactivation campaigns for the 80% of inactive customers (out of the 86% who have purchased) to re-engage them, leveraging their past purchase data to encourage repeat buys and increase overall sales.
  - Introduce strategies to upsell or cross-sell to the 98% of customers spending $0-$10,000, such as bundling high-margin products from Home Appliances and Sports (50% profit margin) to boost average order value.
- - Tailor marketing and product offerings to the mature demographic (80% aged 30+), aligning seasonal promotions with peak sales periods (e.g., March and January) to capitalize on growth rates up to 25% and mitigate declines.
+ - Tailor marketing and product offerings aligning seasonal promotions with peak sales periods (e.g., March and January) to capitalize on growth rates up to 25% and mitigate declines.
  - The healthy profit margin range of 29%-33% across all categories, combined with a 50% margin on top 10 products, indicates an opportunity to explore premium product lines to enhance overall profitability.
- - The consistent 20% customer acquisition rate across countries suggests a stable market expansion potential, which could be leveraged by introducing region-specific promotions to further boost growth.
 
   
-### References
+## References
 
  - "High Performance MySQL: Proven Strategies for Operating at Scale" by Sylvia Botros and Jeremy Tinley Foreword by Jeremy Cole.
  - "Thinking with Data: How to turn Information into Insights" by Max Shron.
