@@ -7,7 +7,7 @@
 
 ## Project Overview
 
-Many stores lose revenue due to poor inventory visibility and missed sales opportunities. As a Data Analyst at Needpam, I developed this project to deliver actionable insights that answer key business questions. I uncovered inventory health, pinpointing zero-stock and overstocked items, product performance, identifying top-selling categories and underperformers, and sales trends, tracking month-over-month growth and seasonal patterns. These findings enable proactive stock management, prevent stockouts, reduce excess inventory, and drive sustainable revenue growth.
+Many stores lose revenue due to poor inventory visibility and missed sales opportunities. As a Data Analyst at Needpam, I developed this project to deliver actionable insights that answer key business questions for the lojistic team. I uncovered inventory health, pinpointing zero-stock and overstocked items, product performance, identifying top-selling categories and underperformers, and sales trends, tracking month-over-month growth and seasonal patterns. These findings enable proactive stock management, prevent stockouts, reduce excess inventory, and drive sustainable revenue growth.
 
 
 
