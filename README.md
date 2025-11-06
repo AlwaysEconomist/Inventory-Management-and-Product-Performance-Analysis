@@ -18,19 +18,6 @@ Many stores lose revenue due to poor inventory visibility and missed sales oppor
 ## Data Sources 
 The database consists of three main tables: dim_customers, which stores customer details, fact_sales which tracks sales data and dim_products, which holds product information. These dimensions tables (customers and products) are joined to the fact sales table using customer_id and product_id.
 
-## Tools used for this project
-
-- Power Query in Excel : Data Cleaning .
-- MySQL : Data Analysis.
-- Excel : Visualization with simple stacked column chart, bar, line, doughnut and pie charts.
-
-## Data Cleaning/Preparation
-  In the initial data preparation phase, we performed the following task:
-   1. Data loading and inspection to correct data errors.
-   2. Handling missing values.
-   3. Standardizing data formats.
-   4. Removing duplicates.
-   5. Validating data integrity.
 
 ## Exploratory Data Analysis (EDA)
  - Which products are out of stock or overstocked?
