@@ -89,7 +89,14 @@ WITH Avg_Daily_Sales AS (
         p.product_id,	
         p.product_name,
         p.stock,
-        SUM(fs.quantity) / DATEDIFF(MAX(fs.order_date), MIN(fs.order_date)) AS Avg_Daily_Qty
+        SUM(fs.quantity) * 1.0 / 
+            NULLIF(
+                DATEDIFF(
+                    MAX(fs.order_date), 
+                    MIN(fs.order_date)
+                ) + 1, 
+                0
+            ) AS Avg_Daily_Qty
     FROM 
         bens.fact_sales fs
         LEFT JOIN bens.dim_products p ON fs.product_id = p.product_id
@@ -98,8 +105,8 @@ WITH Avg_Daily_Sales AS (
         p.product_name,
         p.stock
     HAVING 
-        Avg_Daily_Qty > 0
-)	
+        SUM(fs.quantity) > 0 
+)
 SELECT 
     product_id,
     product_name,
@@ -109,6 +116,7 @@ FROM
     Avg_Daily_Sales
 WHERE 
     stock > 0
+    AND Avg_Daily_Qty > 0  -- Extra safety
 ORDER BY 
     Days_Until_Depletion DESC;
     
